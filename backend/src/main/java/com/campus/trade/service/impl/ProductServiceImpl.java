@@ -1,6 +1,7 @@
 package com.campus.trade.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.trade.common.BusinessException;
@@ -33,8 +34,11 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     public Product getProductDetail(Long id) {
         Product product = this.getById(id);
         if (product != null) {
+            // 浏览量交给数据库自增，避免并发下“先读再写”互相覆盖
+            LambdaUpdateWrapper<Product> update = new LambdaUpdateWrapper<>();
+            update.eq(Product::getProductId, id).setSql("view_count = view_count + 1");
+            this.getBaseMapper().update(null, update);
             product.setViewCount(product.getViewCount() == null ? 1 : product.getViewCount() + 1);
-            this.updateById(product);
         }
         return product;
     }

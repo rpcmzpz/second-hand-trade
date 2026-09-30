@@ -89,7 +89,8 @@ const previewVisible = ref(false)
 const previewUrl = ref('')
 
 const uploadUrl = '/api/upload'
-const uploadHeaders = {}
+// 上传接口同样需要登录态，这里手动带上 Token
+const uploadHeaders = { Authorization: 'Bearer ' + (localStorage.getItem('token') || '') }
 
 const form = reactive({
   title: '',

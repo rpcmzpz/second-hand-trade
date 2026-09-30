@@ -1,5 +1,6 @@
 package com.campus.trade.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.trade.common.BusinessException;
 import com.campus.trade.entity.Order;
@@ -27,12 +28,19 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             throw new BusinessException(400, "商品不存在");
         }
 
-        if ("SOLD".equals(product.getStatus())) {
-            throw new BusinessException(400, "该商品已售出");
-        }
-
         if (product.getSellerId().equals(buyerId)) {
             throw new BusinessException(400, "不能购买自己的商品");
+        }
+
+        // 原子“抢单”：把 “在售” 作为更新条件交给数据库判断，
+        // 影响行数为 0 说明已被别人抢先买走，避免两个人同时下单买到同一件商品
+        LambdaUpdateWrapper<Product> occupy = new LambdaUpdateWrapper<>();
+        occupy.eq(Product::getProductId, productId)
+                .eq(Product::getStatus, "ON_SALE")
+                .set(Product::getStatus, "SOLD")
+                .set(Product::getUpdateTime, LocalDateTime.now());
+        if (productMapper.update(null, occupy) == 0) {
+            throw new BusinessException(400, "手慢了，该商品已被他人买走或已下架");
         }
 
         Order order = new Order();
@@ -45,10 +53,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
         this.save(order);
-
-        product.setStatus("SOLD");
-        product.setUpdateTime(LocalDateTime.now());
-        productMapper.updateById(product);
 
         return order;
     }

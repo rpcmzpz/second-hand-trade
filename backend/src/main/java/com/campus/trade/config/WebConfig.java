@@ -25,8 +25,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/user/login",
                         "/api/product/list",
                         "/api/product/categories",
-                        "/api/product/{id}",
-                        "/api/upload/**"
+                        "/api/product/{id}"
                 );
 
         // 管理员权限拦截器 — 仅 /api/admin/**

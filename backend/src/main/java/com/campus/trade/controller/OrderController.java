@@ -2,6 +2,7 @@ package com.campus.trade.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.campus.trade.common.BusinessException;
 import com.campus.trade.common.Result;
 import com.campus.trade.dto.CreateOrderDTO;
 import com.campus.trade.entity.Order;
@@ -34,15 +35,23 @@ public class OrderController {
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) Long buyerId,
             @RequestParam(required = false) Long sellerId,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
         Page<Order> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
-        if (buyerId != null) {
-            wrapper.eq(Order::getBuyerId, buyerId);
+
+        // 只允许查询与自己相关的订单，参数由前端传入的一律以当前登录用户为准
+        boolean onlyBought = buyerId != null && buyerId.equals(userId);
+        boolean onlySold = sellerId != null && sellerId.equals(userId);
+        if (onlyBought) {
+            wrapper.eq(Order::getBuyerId, userId);
+        } else if (onlySold) {
+            wrapper.eq(Order::getSellerId, userId);
+        } else {
+            wrapper.and(w -> w.eq(Order::getBuyerId, userId).or().eq(Order::getSellerId, userId));
         }
-        if (sellerId != null) {
-            wrapper.eq(Order::getSellerId, sellerId);
-        }
+
         if (StringUtils.hasText(status)) {
             wrapper.eq(Order::getStatus, status);
         }
@@ -51,8 +60,19 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public Result<Order> getById(@PathVariable Long id) {
-        return Result.success(orderService.getById(id));
+    public Result<Order> getById(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        String role = (String) request.getAttribute("role");
+        Order order = orderService.getById(id);
+        if (order == null) {
+            throw new BusinessException(404, "订单不存在");
+        }
+        boolean isAdmin = "admin".equals(role);
+        boolean isParticipant = order.getBuyerId().equals(userId) || order.getSellerId().equals(userId);
+        if (!isAdmin && !isParticipant) {
+            throw new BusinessException(403, "无权查看该订单");
+        }
+        return Result.success(order);
     }
 
     @PutMapping("/{id}/status")
