@@ -8,6 +8,4 @@ export const getUserInfo = () => request.get('/user/info')
 
 export const updateUserInfo = (data) => request.put('/user/info', data)
 
-export const getUserList = (params) => request.get('/user/list', { params })
-
 export const changePassword = (data) => request.put('/user/password', data)

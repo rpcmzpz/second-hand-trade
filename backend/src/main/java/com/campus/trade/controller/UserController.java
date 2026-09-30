@@ -50,14 +50,6 @@ public class UserController {
         return Result.success("更新成功");
     }
 
-    @GetMapping("/list")
-    public Result<Object> list() {
-        return Result.success(userService.list().stream().map(u -> {
-            u.setPassword(null);
-            return u;
-        }).toList());
-    }
-
     @PutMapping("/password")
     public Result<Void> changePassword(@RequestBody Map<String, String> params, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");

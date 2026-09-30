@@ -81,7 +81,7 @@ npm run dev
 backend/src/main/java/com/campus/trade/
 ├── common/              # 通用（Result、BusinessException、GlobalExceptionHandler）
 ├── config/              # 配置（Security、JWT拦截器、Admin拦截器、CORS、MyBatis-Plus）
-├── controller/          # 控制器（User、Product、Order、Review、Message、Admin、Upload）
+├── controller/          # 控制器（User、Product、Order、Review、Message、Admin、Upload、Ai）
 ├── dto/                 # 数据传输对象（Login、Register、CreateOrder 等）
 ├── entity/              # 实体类（User、Product、Order、Category、Review、Message）
 ├── mapper/              # MyBatis-Plus Mapper 接口
